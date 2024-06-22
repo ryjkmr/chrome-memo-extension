@@ -5,4 +5,4 @@
 - Saveボタンは自動保存とは別にデータ保存し、Loadボタンで再読み込みできます。
 - 同じGoogleアカウントでログインしているChrome間ではデータが同期されます。（同期されないことも- あるかもしれません）
 
-[リンクテキスト](URL)
+[Blog](https://ryjkmr.com/browser-quick-memo-extention)
