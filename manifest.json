@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Popup Text Editor",
-  "version": "1.0",
-  "description": "Handy Popup Text Editor for Chrome",
+  "name": "Chrome メモ",
+  "version": "1.2.0",
+  "description": "同期対応のシンプルな Chrome メモ帳",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -12,9 +12,32 @@
     }
   },
   "permissions": [
+    "clipboardRead",
     "clipboardWrite",
+    "contextMenus",
     "storage"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"]
+    }
+  ],
+  "commands": {
+    "append-selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+M",
+        "mac": "MacCtrl+Shift+M"
+      },
+      "description": "選択テキストを Chrome メモに追記"
+    }
+  },
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",

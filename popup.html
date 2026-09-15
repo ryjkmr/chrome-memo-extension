@@ -1,42 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
-
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Popup Text Edit</title>
-  <style>
-    textarea {
-      font-size: 36px;
-      min-width: 200px; 
-      max-width: 600px;
-    }
-    button{
-      margin-right:5px ;
-    }
-  </style>
-</head>
-
-<body>
-  <textarea id="textArea" rows="5" cols="30"></textarea>
-  <button id="copyButton">Copy</button>
-  <button id="saveButton">Save</button>
-  <button id="loadButton">Load</button>
-  <span id="message"></span>
-  <script src="popup.js"></script>
-</body>
-
-</html>
-
-<!DOCTYPE html>
-<html lang="ja">
-
-<head>
-  <title>Document</title>
-</head>
-
-<body>
-
-</body>
-
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome メモ</title>
+    <style>
+      :root { color-scheme: light dark; }
+      * { box-sizing: border-box; }
+      body { width: 360px; margin: 0; padding: 16px; color: #1f2937; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      h1 { margin: 0; font-size: 16px; }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+      .header, .meta, .actions { display: flex; align-items: center; }
+      .header { justify-content: space-between; margin-bottom: 12px; }
+      .meta { justify-content: space-between; margin-top: 8px; min-height: 20px; font-size: 12px; color: #64748b; }
+      textarea { display: block; width: 100%; min-height: 220px; resize: vertical; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; color: inherit; background: #fff; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      textarea:focus { outline: 2px solid #60a5fa; outline-offset: 1px; border-color: #60a5fa; }
+      details { margin-top: 14px; border-top: 1px solid #cbd5e1; padding-top: 12px; }
+      summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+      .replace-fields { display: grid; gap: 8px; margin-top: 10px; }
+      .replace-fields label { display: grid; gap: 4px; font-size: 12px; color: #475569; }
+      .replace-fields textarea { min-height: 48px; padding: 7px; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .replace-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+      .search-status { min-height: 18px; margin-top: 7px; font-size: 12px; color: #64748b; }
+      .actions { flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+      button { padding: 8px 11px; border: 1px solid #cbd5e1; border-radius: 6px; color: #334155; background: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+      button:hover { background: #f1f5f9; }
+      button.primary { margin-right: auto; border-color: #2563eb; color: #fff; background: #2563eb; }
+      button.primary:hover { background: #1d4ed8; }
+      #message[data-kind="error"] { color: #b91c1c; }
+      #message[data-kind="success"] { color: #15803d; }
+      @media (prefers-color-scheme: dark) { body { color: #e2e8f0; background: #0f172a; } textarea, button { border-color: #475569; color: #e2e8f0; background: #1e293b; } button:hover { background: #334155; } }
+    </style>
+  </head>
+  <body>
+    <div class="header"><h1>メモ</h1><span id="characterCount" aria-label="文字数">0 文字</span></div>
+    <label for="textArea" class="visually-hidden">メモの内容</label>
+    <textarea id="textArea" placeholder="ここにメモを入力…" spellcheck="true"></textarea>
+    <details>
+      <summary>検索・置換</summary>
+      <div class="replace-fields">
+        <label for="searchText">検索する文字列（改行を含められます）
+          <textarea id="searchText" rows="2" spellcheck="false"></textarea>
+        </label>
+        <label for="replaceText">置換後の文字列（改行を含められます）
+          <textarea id="replaceText" rows="2" spellcheck="false"></textarea>
+        </label>
+      </div>
+      <div class="replace-actions">
+        <button id="findNextButton" type="button">次を検索</button>
+        <button id="replaceAllButton" type="button">すべて置換</button>
+        <button id="normalizeButton" type="button">英数を半角に</button>
+        <button id="collapseNumberBreaksButton" type="button">数字後の改行を空白に</button>
+      </div>
+      <div id="searchStatus" class="search-status" aria-live="polite"></div>
+    </details>
+    <div class="actions">
+      <button id="copyButton" class="primary" type="button">コピー</button>
+      <button id="appendButton" type="button">追記</button>
+      <button id="saveButton" type="button">保存</button>
+      <button id="loadButton" type="button">保存済みを読込</button>
+      <button id="clearButton" type="button">消去</button>
+    </div>
+    <div class="meta"><span id="message" role="status" aria-live="polite"></span><span>⌘/Ctrl + Enter: コピー</span></div>
+    <script src="popup.js"></script>
+  </body>
 </html>
