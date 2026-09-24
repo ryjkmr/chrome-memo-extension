@@ -184,6 +184,21 @@ document.getElementById('collapseNumberBreaksButton').addEventListener('click', 
   applyTextChange(textArea.value.replace(pattern, '$1 '), `${count} か所の改行を半角スペースに変換しました`);
 });
 
+document.getElementById('removeLineBreaksButton').addEventListener('click', () => {
+  const normalizedLineEndings = textArea.value.replace(/\r\n?/g, '\n');
+  const withoutTrailingSpaces = normalizedLineEndings.replace(/[ \t　\u00A0]+\n/g, '\n');
+  const transformed = withoutTrailingSpaces.replace(/\n+/g, (lineBreaks, offset, text) => {
+    if (lineBreaks.length >= 2) return '\n\n';
+    const previousCharacter = text[offset - 1];
+    return previousCharacter === '」' || previousCharacter === '。' ? '\n' : '';
+  });
+  if (transformed === textArea.value) {
+    showMessage('削除できる改行はありません');
+    return;
+  }
+  applyTextChange(transformed, '改行を削除しました');
+});
+
 document.getElementById('mergeSelectedLinesButton').addEventListener('click', () => {
   const { selectionStart: start, selectionEnd: end, value } = textArea;
   if (start === end) {
