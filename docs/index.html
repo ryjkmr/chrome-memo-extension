@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Chrome メモの大画面向け Web アプリ版">
+    <title>Chrome メモ Web</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Chrome メモ <span>Web</span></h1>
+        <p>このブラウザ内に自動保存します。Chrome 同期は使いません。</p>
+      </div>
+      <div class="header-meta"><span id="characterCount">0 文字</span><span id="message" role="status" aria-live="polite"></span></div>
+    </header>
+
+    <main>
+      <section class="editor-panel" aria-label="メモエディター">
+        <textarea id="textArea" placeholder="ここにメモを入力、または拡張機能から貼り付け…" spellcheck="true"></textarea>
+        <div class="editor-actions">
+          <button id="copyButton" class="primary" type="button">コピー</button>
+          <button id="saveButton" type="button">保存</button>
+          <button id="loadButton" type="button">保存済みを読込</button>
+          <button id="clearButton" type="button">消去</button>
+        </div>
+      </section>
+
+      <aside class="tools-panel" aria-label="編集ツール">
+        <section class="tool-group">
+          <h2>検索・置換</h2>
+          <label for="searchText">検索する文字列（改行可）</label>
+          <textarea id="searchText" class="small-textarea" rows="3" spellcheck="false"></textarea>
+          <label for="replaceText">置換後の文字列（改行可）</label>
+          <textarea id="replaceText" class="small-textarea" rows="3" spellcheck="false"></textarea>
+          <div class="button-row"><button id="findNextButton" type="button">次を検索</button><button id="replaceAllButton" type="button">すべて置換</button><button id="undoButton" type="button" disabled>元に戻す</button></div>
+          <p id="searchStatus" class="muted" aria-live="polite"></p>
+        </section>
+
+        <section class="tool-group">
+          <h2>整形</h2>
+          <div class="button-stack">
+            <button id="normalizeButton" type="button">全角英数字を半角に</button>
+            <button id="collapseNumberBreaksButton" type="button">数字後の改行を空白に</button>
+            <button id="mergeSelectedLinesButton" type="button">選択行を上の行へ結合</button>
+          </div>
+          <p class="muted">選択行の結合は、選んだ行を直上の行の右側へ順番に移します。余った行は残ります。</p>
+        </section>
+      </aside>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

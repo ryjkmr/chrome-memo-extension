@@ -28,14 +28,42 @@ async function appendToMemo(text) {
   await storageSet({ [DRAFT_KEY]: `${currentText}${separator}${text}` });
 }
 
-function createContextMenu() {
-  chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: MENU_ID,
-      title: 'Chrome メモに追記',
-      contexts: ['selection'],
+function getAppendShortcut() {
+  return new Promise((resolve) => {
+    chrome.commands.getAll((commands) => {
+      if (chrome.runtime.lastError) {
+        console.error('ショートカットを取得できませんでした:', chrome.runtime.lastError.message);
+        resolve('');
+        return;
+      }
+      resolve(commands.find((command) => command.name === 'append-selection')?.shortcut || '');
     });
   });
+}
+
+function contextMenuTitle(shortcut) {
+  return shortcut
+    ? `Chrome メモに追記（${shortcut}）`
+    : 'Chrome メモに追記（ショートカット未設定）';
+}
+
+async function createContextMenu() {
+  await new Promise((resolve) => chrome.contextMenus.removeAll(resolve));
+  chrome.contextMenus.create({
+    id: MENU_ID,
+    title: contextMenuTitle(await getAppendShortcut()),
+    contexts: ['selection'],
+  });
+}
+
+async function updateContextMenuTitle() {
+  try {
+    await chrome.contextMenus.update(MENU_ID, {
+      title: contextMenuTitle(await getAppendShortcut()),
+    });
+  } catch (error) {
+    console.error('右クリックメニューを更新できませんでした:', error);
+  }
 }
 
 chrome.runtime.onInstalled.addListener(createContextMenu);
@@ -46,6 +74,8 @@ chrome.contextMenus.onClicked.addListener(async (info) => {
     await appendToMemo(info.selectionText);
   } catch (error) {
     console.error('選択テキストを追記できませんでした:', error);
+  } finally {
+    await updateContextMenuTitle();
   }
 });
 
@@ -58,5 +88,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     await appendToMemo(response?.text);
   } catch (error) {
     console.error('選択テキストを追記できませんでした:', error);
+  } finally {
+    await updateContextMenuTitle();
   }
 });

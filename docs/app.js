@@ -1,7 +1,5 @@
-const DRAFT_KEY = 'popupTextEditorDraft';
-const SAVED_KEY = 'popupTextEditorSavedText';
-const LEGACY_DRAFT_KEY = 'popupTextEditorAutoSavedText';
-const AUTO_SAVE_DELAY_MS = 700;
+const DRAFT_KEY = 'chromeMemoWebDraft';
+const SAVED_KEY = 'chromeMemoWebSavedText';
 const MAX_UNDO_HISTORY = 50;
 
 const textArea = document.getElementById('textArea');
@@ -15,24 +13,6 @@ let autoSaveTimer;
 let messageTimer;
 const undoHistory = [];
 
-function storageGet(key) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(key, (result) => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      resolve(result);
-    });
-  });
-}
-
-function storageSet(value) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.sync.set(value, () => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      resolve();
-    });
-  });
-}
-
 function showMessage(message, kind = 'success') {
   window.clearTimeout(messageTimer);
   messageElement.textContent = message;
@@ -40,7 +20,7 @@ function showMessage(message, kind = 'success') {
   messageTimer = window.setTimeout(() => {
     messageElement.textContent = '';
     delete messageElement.dataset.kind;
-  }, 2500);
+  }, 3000);
 }
 
 function updateCharacterCount() {
@@ -59,9 +39,21 @@ function countMatches(text, query) {
 }
 
 function updateSearchStatus() {
-  const query = searchText.value;
-  const count = countMatches(textArea.value, query);
-  searchStatus.textContent = query === '' ? '' : `${count} 件見つかりました`;
+  const count = countMatches(textArea.value, searchText.value);
+  searchStatus.textContent = searchText.value === '' ? '' : `${count} 件見つかりました`;
+}
+
+function saveDraft() {
+  try {
+    localStorage.setItem(DRAFT_KEY, textArea.value);
+  } catch (error) {
+    showMessage(`自動保存に失敗しました: ${error.message}`, 'error');
+  }
+}
+
+function scheduleAutoSave() {
+  window.clearTimeout(autoSaveTimer);
+  autoSaveTimer = window.setTimeout(saveDraft, 500);
 }
 
 function updateUndoButton() {
@@ -77,46 +69,9 @@ function applyTextChange(text, message) {
   textArea.value = text;
   updateCharacterCount();
   updateSearchStatus();
-  scheduleAutoSave();
+  saveDraft();
   showMessage(message);
   textArea.focus();
-}
-
-async function saveDraft({ notify = false } = {}) {
-  try {
-    await storageSet({ [DRAFT_KEY]: textArea.value });
-    if (notify) showMessage('下書きを自動保存しました');
-  } catch (error) {
-    showMessage(`自動保存に失敗しました: ${error.message}`, 'error');
-  }
-}
-
-function scheduleAutoSave() {
-  window.clearTimeout(autoSaveTimer);
-  autoSaveTimer = window.setTimeout(() => saveDraft(), AUTO_SAVE_DELAY_MS);
-}
-
-async function copyText() {
-  try {
-    await navigator.clipboard.writeText(textArea.value);
-    showMessage('クリップボードにコピーしました');
-  } catch (error) {
-    showMessage(`コピーに失敗しました: ${error.message}`, 'error');
-  }
-}
-
-async function appendClipboardText() {
-  try {
-    const clipboardText = await navigator.clipboard.readText();
-    if (clipboardText === '') {
-      showMessage('クリップボードにテキストがありません', 'error');
-      return;
-    }
-    const separator = textArea.value === '' ? '' : '\n';
-    applyTextChange(`${textArea.value}${separator}${clipboardText}`, 'クリップボードのテキストを追記しました');
-  } catch (error) {
-    showMessage(`追記に失敗しました: ${error.message}`, 'error');
-  }
 }
 
 textArea.addEventListener('input', () => {
@@ -124,10 +79,17 @@ textArea.addEventListener('input', () => {
   updateSearchStatus();
   scheduleAutoSave();
 });
-
 searchText.addEventListener('input', updateSearchStatus);
 
-document.getElementById('copyButton').addEventListener('click', copyText);
+document.getElementById('copyButton').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(textArea.value);
+    showMessage('クリップボードにコピーしました');
+  } catch (error) {
+    showMessage(`コピーに失敗しました: ${error.message}`, 'error');
+  }
+});
+
 undoButton.addEventListener('click', () => {
   const previousText = undoHistory.pop();
   if (previousText === undefined) return;
@@ -135,33 +97,28 @@ undoButton.addEventListener('click', () => {
   updateUndoButton();
   updateCharacterCount();
   updateSearchStatus();
-  scheduleAutoSave();
+  saveDraft();
   showMessage('操作を元に戻しました');
   textArea.focus();
 });
-document.getElementById('appendButton').addEventListener('click', appendClipboardText);
 
-document.getElementById('saveButton').addEventListener('click', async () => {
-  window.clearTimeout(autoSaveTimer);
+document.getElementById('saveButton').addEventListener('click', () => {
   try {
-    await storageSet({ [SAVED_KEY]: textArea.value, [DRAFT_KEY]: textArea.value });
+    localStorage.setItem(SAVED_KEY, textArea.value);
+    saveDraft();
     showMessage('保存しました');
   } catch (error) {
     showMessage(`保存に失敗しました: ${error.message}`, 'error');
   }
 });
 
-document.getElementById('loadButton').addEventListener('click', async () => {
-  try {
-    const data = await storageGet(SAVED_KEY);
-    if (data[SAVED_KEY] === undefined) {
-      showMessage('保存済みのメモはありません', 'error');
-      return;
-    }
-    applyTextChange(data[SAVED_KEY], '保存済みのメモを読み込みました');
-  } catch (error) {
-    showMessage(`読み込みに失敗しました: ${error.message}`, 'error');
+document.getElementById('loadButton').addEventListener('click', () => {
+  const savedText = localStorage.getItem(SAVED_KEY);
+  if (savedText === null) {
+    showMessage('保存済みのメモはありません', 'error');
+    return;
   }
+  applyTextChange(savedText, '保存済みのメモを読み込みました');
 });
 
 document.getElementById('clearButton').addEventListener('click', () => {
@@ -176,7 +133,6 @@ document.getElementById('findNextButton').addEventListener('click', () => {
     searchText.focus();
     return;
   }
-
   const start = textArea.selectionEnd;
   let index = textArea.value.indexOf(query, start);
   let wrapped = false;
@@ -188,7 +144,6 @@ document.getElementById('findNextButton').addEventListener('click', () => {
     showMessage('見つかりませんでした', 'error');
     return;
   }
-
   textArea.focus();
   textArea.setSelectionRange(index, index + query.length);
   showMessage(wrapped ? '先頭に戻って見つけました' : '見つけました');
@@ -239,16 +194,9 @@ document.getElementById('mergeSelectedLinesButton').addEventListener('click', ()
     showMessage('行の先頭から末尾までを選択してください', 'error');
     return;
   }
-
-  const sourceLines = value.slice(start, end)
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line !== '');
+  const sourceLines = value.slice(start, end).split('\n').map((line) => line.trim()).filter((line) => line !== '');
   const linesBeforeSelection = value.slice(0, start).split('\n');
-  const availableTargetIndexes = linesBeforeSelection
-    .map((line, index) => (line.trim() === '' ? -1 : index))
-    .filter((index) => index !== -1);
-
+  const availableTargetIndexes = linesBeforeSelection.map((line, index) => (line.trim() === '' ? -1 : index)).filter((index) => index !== -1);
   if (sourceLines.length === 0) {
     showMessage('選択範囲に移動できる行がありません', 'error');
     return;
@@ -257,50 +205,22 @@ document.getElementById('mergeSelectedLinesButton').addEventListener('click', ()
     showMessage('結合先となる上側の行がありません', 'error');
     return;
   }
-
   const pairCount = Math.min(sourceLines.length, availableTargetIndexes.length);
-  const targetIndexes = availableTargetIndexes.slice(-pairCount);
-
-  targetIndexes.forEach((targetIndex, sourceIndex) => {
+  availableTargetIndexes.slice(-pairCount).forEach((targetIndex, sourceIndex) => {
     const target = linesBeforeSelection[targetIndex].replace(/[ \t　]+$/, '');
     linesBeforeSelection[targetIndex] = `${target} ${sourceLines[sourceIndex]}`;
   });
   const remainingSourceLines = sourceLines.slice(pairCount);
-  const remainingText = `${linesBeforeSelection.join('\n')}${remainingSourceLines.join('\n')}${value.slice(end)}`
-    .replace(/\n{3,}/g, '\n\n');
-  const message = remainingSourceLines.length === 0
-    ? `${pairCount} 行を上の行へ結合しました`
-    : `${pairCount} 行を結合し、${remainingSourceLines.length} 行は残しました`;
+  const remainingText = `${linesBeforeSelection.join('\n')}${remainingSourceLines.join('\n')}${value.slice(end)}`.replace(/\n{3,}/g, '\n\n');
+  const message = remainingSourceLines.length === 0 ? `${pairCount} 行を上の行へ結合しました` : `${pairCount} 行を結合し、${remainingSourceLines.length} 行は残しました`;
   applyTextChange(remainingText, message);
 });
 
-document.addEventListener('keydown', (event) => {
-  if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-    event.preventDefault();
-    copyText();
-  }
-});
-
-window.addEventListener('pagehide', () => {
-  window.clearTimeout(autoSaveTimer);
-  chrome.storage.sync.set({ [DRAFT_KEY]: textArea.value });
-});
-
-async function initialize() {
-  try {
-    const data = await storageGet([DRAFT_KEY, LEGACY_DRAFT_KEY]);
-    if (data[DRAFT_KEY] !== undefined) {
-      textArea.value = data[DRAFT_KEY];
-    } else if (data[LEGACY_DRAFT_KEY] !== undefined) {
-      textArea.value = data[LEGACY_DRAFT_KEY];
-      await storageSet({ [DRAFT_KEY]: textArea.value });
-    }
-  } catch (error) {
-    showMessage(`下書きを読み込めませんでした: ${error.message}`, 'error');
-  }
-  updateCharacterCount();
-  updateSearchStatus();
-  textArea.focus();
+try {
+  textArea.value = localStorage.getItem(DRAFT_KEY) || '';
+} catch (error) {
+  showMessage(`下書きを読み込めませんでした: ${error.message}`, 'error');
 }
-
-initialize();
+updateCharacterCount();
+updateSearchStatus();
+textArea.focus();

@@ -7,13 +7,14 @@
     <style>
       :root { color-scheme: light dark; }
       * { box-sizing: border-box; }
-      body { width: 360px; margin: 0; padding: 16px; color: #1f2937; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      body { width: 360px; max-height: 600px; margin: 0; padding: 16px; overflow-y: auto; color: #1f2937; background: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       h1 { margin: 0; font-size: 16px; }
       .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
       .header, .meta, .actions { display: flex; align-items: center; }
       .header { justify-content: space-between; margin-bottom: 12px; }
       .meta { justify-content: space-between; margin-top: 8px; min-height: 20px; font-size: 12px; color: #64748b; }
       textarea { display: block; width: 100%; min-height: 220px; resize: vertical; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; color: inherit; background: #fff; font: 14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      #textArea { max-height: 360px; }
       textarea:focus { outline: 2px solid #60a5fa; outline-offset: 1px; border-color: #60a5fa; }
       details { margin-top: 14px; border-top: 1px solid #cbd5e1; padding-top: 12px; }
       summary { cursor: pointer; font-size: 13px; font-weight: 600; }
@@ -22,6 +23,7 @@
       .replace-fields textarea { min-height: 48px; padding: 7px; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
       .replace-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
       .search-status { min-height: 18px; margin-top: 7px; font-size: 12px; color: #64748b; }
+      .merge-help { margin: 8px 0 0; font-size: 12px; color: #64748b; }
       .actions { flex-wrap: wrap; gap: 8px; margin-top: 12px; }
       button { padding: 8px 11px; border: 1px solid #cbd5e1; border-radius: 6px; color: #334155; background: #fff; font: inherit; font-size: 13px; cursor: pointer; }
       button:hover { background: #f1f5f9; }
@@ -51,7 +53,10 @@
         <button id="replaceAllButton" type="button">すべて置換</button>
         <button id="normalizeButton" type="button">英数を半角に</button>
         <button id="collapseNumberBreaksButton" type="button">数字後の改行を空白に</button>
+        <button id="mergeSelectedLinesButton" type="button">選択行を上の行へ結合</button>
+        <button id="undoButton" type="button" disabled>元に戻す</button>
       </div>
+      <p class="merge-help">移したい行を選択すると、直上の行の右側へ順番に結合します。行数が余った場合は残します。</p>
       <div id="searchStatus" class="search-status" aria-live="polite"></div>
     </details>
     <div class="actions">
